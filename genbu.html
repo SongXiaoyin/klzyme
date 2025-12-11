@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>植物根部吸收氮磷钾动态示意图</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1000px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            overflow: auto;
+        }
+        
+        h1 {
+            color: #2c5530;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+        
+        .animation-container {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #4a7c59;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #3a6348;
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            border-radius: 2px;
+        }
+        
+        .stage-indicator {
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+            color: #4a7c59;
+            min-height: 24px;
+        }
+        
+        .info-panel {
+            background-color: #f0f7f2;
+            border-left: 4px solid #4a7c59;
+            padding: 12px;
+            margin-top: 15px;
+            border-radius: 0 5px 5px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .info-title {
+            font-weight: bold;
+            color: #2c5530;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>植物根部吸收氮、磷、钾动态示意图</h1>
+        <div class="subtitle">展示氮(N)、磷(P)、钾(K)三种关键养分的吸收机制与路径差异</div>
+        
+        <div class="stage-indicator" id="stageIndicator">阶段 1/4: 初始状态 - 土壤中的养分分布</div>
+        
+        <div class="animation-container" id="animationContainer">
+            <!-- SVG动画将在这里通过JavaScript动态生成 -->
+        </div>
+        
+        <div class="legend" id="legendContainer">
+            <!-- 图例将通过JavaScript动态生成 -->
+        </div>
+        
+        <div class="info-panel" id="infoPanel">
+            <div class="info-title">当前状态说明</div>
+            <div id="infoText">初始状态：展示土壤中的氮(N)、磷(P)、钾(K)养分分布及植物根系结构。</div>
+        </div>
+        
+        <div class="controls">
+            <button id="prevBtn">上一步</button>
+            <button id="restartBtn">重新开始</button>
+            <button id="playBtn">播放/暂停</button>
+            <button id="nextBtn">下一步</button>
+            <button id="showAllBtn">显示全部过程</button>
+        </div>
+    </div>
+
+    <script>
+        // SVG尺寸和配置
+        const svgWidth = 1000;
+        const svgHeight = 600;
+        const soilColor = "#e6ccb3";
+        const rootColor = "#8b4513";
+        const rhizosphereColor = "rgba(139, 69, 19, 0.1)";
+        
+        // 颜色定义
+        const nutrientColors = {
+            nitrogen: {NH4: "#9b59b6", NO3: "#e67e22"},  // 铵态氮紫色，硝态氮橙色
+            phosphorus: "#3498db",  // 磷蓝色
+            potassium: "#2ecc71",   // 钾绿色
+            hPlus: "#e74c3c",       // 氢离子红色
+            organicAcid: "#f1c40f", // 有机酸黄色
+            mycorrhiza: "#8e44ad"   // 菌根真菌紫色
+        };
+        
+        // 动画阶段定义
+        const animationStages = [
+            {
+                name: "初始状态",
+                description: "展示土壤中的氮(N)、磷(P)、钾(K)养分分布及植物根系结构。",
+                duration: 3000
+            },
+            {
+                name: "根际酸化过程",
+                description: "根系分泌H⁺质子，酸化根际土壤，活化被固定的磷、钾养分。",
+                duration: 4000
+            },
+            {
+                name: "氮(N)吸收过程",
+                description: "铵态氮(NH₄⁺)通过铵转运蛋白直接吸收；硝态氮(NO₃⁻)与H⁺共运输进入根细胞。",
+                duration: 4000
+            },
+            {
+                name: "磷(P)吸收过程",
+                description: "1) 根系分泌有机酸溶解固定态磷；2) 菌根真菌协助吸收远处磷；3) 磷酸盐通过共运输进入。",
+                duration: 4500
+            },
+            {
+                name: "钾(K)吸收过程",
+                description: "1) 钾离子(K⁺)通过离子通道快速扩散；2) 通过载体蛋白主动运输进入根细胞。",
+                duration: 4000
+            },
+            {
+                name: "完整吸收过程",
+                description: "氮、磷、钾三种养分同时通过各自机制被植物根部吸收，进入木质部导管向上运输。",
+                duration: 5000
+            }
+        ];
+        
+        // 全局变量
+        let currentStage = 0;
+        let animationPlaying = false;
+        let animationTimer = null;
+        let svg;
+        
+        // 初始化SVG
+        function initSVG() {
+            const container = document.getElementById('animationContainer');
+            container.innerHTML = '';
+            
+            svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("width", "100%");
+            svg.setAttribute("height", "100%");
+            svg.setAttribute("viewBox", `0 0 ${svgWidth} ${svgHeight}`);
+            svg.style.backgroundColor = "#faf3e8";
+            
+            container.appendChild(svg);
+            
+            // 创建图例
+            createLegend();
+            
+            // 绘制静态背景
+            drawStaticBackground();
+            
+            // 绘制初始状态
+            drawStage(0);
+        }
+        
+        // 创建图例
+        function createLegend() {
+            const legendContainer = document.getElementById('legendContainer');
+            legendContainer.innerHTML = '';
+            
+            const legendItems = [
+                {color: nutrientColors.nitrogen.NH4, text: "铵态氮 (NH₄⁺)"},
+                {color: nutrientColors.nitrogen.NO3, text: "硝态氮 (NO₃⁻)"},
+                {color: nutrientColors.phosphorus, text: "磷 (H₂PO₄⁻)"},
+                {color: nutrientColors.potassium, text: "钾 (K⁺)"},
+                {color: nutrientColors.hPlus, text: "氢离子 (H⁺)"},
+                {color: nutrientColors.organicAcid, text: "有机酸"},
+                {color: nutrientColors.mycorrhiza, text: "菌根真菌"}
+            ];
+            
+            legendItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'legend-item';
+                
+                const colorBox = document.createElement('div');
+                colorBox.className = 'legend-color';
+                colorBox.style.backgroundColor = item.color;
+                
+                const textSpan = document.createElement('span');
+                textSpan.textContent = item.text;
+                
+                div.appendChild(colorBox);
+                div.appendChild(textSpan);
+                legendContainer.appendChild(div);
+            });
+        }
+        
+        // 绘制静态背景
+        function drawStaticBackground() {
+            // 绘制土壤背景
+            const soil = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            soil.setAttribute("x", "0");
+            soil.setAttribute("y", "200");
+            soil.setAttribute("width", svgWidth.toString());
+            soil.setAttribute("height", (svgHeight - 200).toString());
+            soil.setAttribute("fill", soilColor);
+            svg.appendChild(soil);
+            
+            // 绘制土壤分层线
+            const soilLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            soilLine.setAttribute("x1", "0");
+            soilLine.setAttribute("y1", "200");
+            soilLine.setAttribute("x2", svgWidth.toString());
+            soilLine.setAttribute("y2", "200");
+            soilLine.setAttribute("stroke", "#a67c52");
+            soilLine.setAttribute("stroke-width", "2");
+            soilLine.setAttribute("stroke-dasharray", "5,5");
+            svg.appendChild(soilLine);
+            
+            // 添加土壤文字标签
+            const soilLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            soilLabel.setAttribute("x", "50");
+            soilLabel.setAttribute("y", "230");
+            soilLabel.setAttribute("fill", "#7d5c3a");
+            soilLabel.setAttribute("font-size", "16");
+            soilLabel.setAttribute("font-weight", "bold");
+            soilLabel.textContent = "土壤层";
+            svg.appendChild(soilLabel);
+            
+            // 绘制植物根系（静态部分）
+            drawRootSystem();
+            
+            // 绘制根际区域指示
+            const rhizosphere = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+            rhizosphere.setAttribute("cx", "250");
+            rhizosphere.setAttribute("cy", "350");
+            rhizosphere.setAttribute("rx", "180");
+            rhizosphere.setAttribute("ry", "120");
+            rhizosphere.setAttribute("fill", "none");
+            rhizosphere.setAttribute("stroke", "#8b4513");
+            rhizosphere.setAttribute("stroke-width", "2");
+            rhizosphere.setAttribute("stroke-dasharray", "8,4");
+            svg.appendChild(rhizosphere);
+            
+            const rhizosphereLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            rhizosphereLabel.setAttribute("x", "150");
+            rhizosphereLabel.setAttribute("y", "320");
+            rhizosphereLabel.setAttribute("fill", "#8b4513");
+            rhizosphereLabel.setAttribute("font-size", "14");
+            rhizosphereLabel.textContent = "根际区";
+            svg.appendChild(rhizosphereLabel);
+            
+            const bulkSoilLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            bulkSoilLabel.setAttribute("x", "700");
+            bulkSoilLabel.setAttribute("y", "320");
+            bulkSoilLabel.setAttribute("fill", "#8b4513");
+            bulkSoilLabel.setAttribute("font-size", "14");
+            bulkSoilLabel.textContent = "本体土";
+            svg.appendChild(bulkSoilLabel);
+            
+            // 添加分隔线
+            const separator = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            separator.setAttribute("x1", "500");
+            separator.setAttribute("y1", "200");
+            separator.setAttribute("x2", "500");
+            separator.setAttribute("y2", svgHeight.toString());
+            separator.setAttribute("stroke", "#a67c52");
+            separator.setAttribute("stroke-width", "2");
+            separator.setAttribute("stroke-dasharray", "10,5");
+            svg.appendChild(separator);
+            
+            // 添加右侧放大区域标签
+            const zoomLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            zoomLabel.setAttribute("x", "750");
+            zoomLabel.setAttribute("y", "230");
+            zoomLabel.setAttribute("fill", "#7d5c3a");
+            zoomLabel.setAttribute("font-size", "16");
+            zoomLabel.setAttribute("font-weight", "bold");
+            zoomLabel.textContent = "根毛细胞吸收过程（放大）";
+            svg.appendChild(zoomLabel);
+        }
+        
+        // 绘制根系系统
+        function drawRootSystem() {
+            // 主根
+            const mainRoot = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            mainRoot.setAttribute("d", "M 200,100 C 180,200 160,300 150,400 C 140,500 160,580 180,590");
+            mainRoot.setAttribute("fill", "none");
+            mainRoot.setAttribute("stroke", rootColor);
+            mainRoot.setAttribute("stroke-width", "10");
+            svg.appendChild(mainRoot);
+            
+            // 侧根
+            const sideRoots = [
+                {d: "M 180,250 C 160,260 140,270 120,280", width: 6},
+                {d: "M 190,350 C 170,360 150,370 110,390", width: 6},
+                {d: "M 200,450 C 180,460 160,470 130,490", width: 6},
+                {d: "M 220,300 C 240,310 260,320 280,330", width: 5},
+                {d: "M 210,400 C 230,410 250,420 270,430", width: 5}
+            ];
+            
+            sideRoots.forEach(root => {
+                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                path.setAttribute("d", root.d);
+                path.setAttribute("fill", "none");
+                path.setAttribute("stroke", rootColor);
+                path.setAttribute("stroke-width", root.width.toString());
+                svg.appendChild(path);
+            });
+            
+            // 根毛区域指示
+            const rootHairArea = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+            rootHairArea.setAttribute("cx", "180");
+            rootHairArea.setAttribute("cy", "380");
+            rootHairArea.setAttribute("rx", "40");
+            rootHairArea.setAttribute("ry", "80");
+            rootHairArea.setAttribute("fill", "none");
+            rootHairArea.setAttribute("stroke", "#d2691e");
+            rootHairArea.setAttribute("stroke-width", "2");
+            rootHairArea.setAttribute("stroke-dasharray", "4,2");
+            svg.appendChild(rootHairArea);
+            
+            const rootHairLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            rootHairLabel.setAttribute("x", "120");
+            rootHairLabel.setAttribute("y", "360");
+            rootHairLabel.setAttribute("fill", "#d2691e");
+            rootHairLabel.setAttribute("font-size", "13");
+            rootHairLabel.textContent = "根毛密集区";
+            svg.appendChild(rootHairLabel);
+            
+            // 绘制木质部导管
+            const xylem = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            xylem.setAttribute("x", "170");
+            xylem.setAttribute("y", "50");
+            xylem.setAttribute("width", "20");
+            xylem.setAttribute("height", "550");
+            xylem.setAttribute("fill", "none");
+            xylem.setAttribute("stroke", "#2c5530");
+            xylem.setAttribute("stroke-width", "4");
+            svg.appendChild(xylem);
+            
+            const xylemLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            xylemLabel.setAttribute("x", "195");
+            xylemLabel.setAttribute("y", "100");
+            xylemLabel.setAttribute("fill", "#2c5530");
+            xylemLabel.setAttribute("font-size", "14");
+            xylemLabel.setAttribute("font-weight", "bold");
+            xylemLabel.textContent = "木质部导管";
+            svg.appendChild(xylemLabel);
+            
+            // 添加向上运输箭头
+            const transportArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            transportArrow.setAttribute("d", "M 180,550 L 180,100");
+            transportArrow.setAttribute("fill", "none");
+            transportArrow.setAttribute("stroke", "#2c5530");
+            transportArrow.setAttribute("stroke-width", "2");
+            transportArrow.setAttribute("marker-end", "url(#arrowhead)");
+            svg.appendChild(transportArrow);
+            
+            // 定义箭头标记
+            const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+            const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+            marker.setAttribute("id", "arrowhead");
+            marker.setAttribute("markerWidth", "10");
+            marker.setAttribute("markerHeight", "7");
+            marker.setAttribute("refX", "9");
+            marker.setAttribute("refY", "3.5");
+            marker.setAttribute("orient", "auto");
+            
+            const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            polygon.setAttribute("points", "0 0, 10 3.5, 0 7");
+            polygon.setAttribute("fill", "#2c5530");
+            
+            marker.appendChild(polygon);
+            defs.appendChild(marker);
+            svg.appendChild(defs);
+        }
+        
+        // 绘制根毛细胞放大图
+        function drawRootCellZoom() {
+            // 细胞外框
+            const cell = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            cell.setAttribute("x", "600");
+            cell.setAttribute("y", "250");
+            cell.setAttribute("width", "350");
+            cell.setAttribute("height", "300");
+            cell.setAttribute("fill", "none");
+            cell.setAttribute("stroke", "#333");
+            cell.setAttribute("stroke-width", "3");
+            svg.appendChild(cell);
+            
+            // 细胞膜
+            const cellMembrane = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            cellMembrane.setAttribute("x", "600");
+            cellMembrane.setAttribute("y", "250");
+            cellMembrane.setAttribute("width", "350");
+            cellMembrane.setAttribute("height", "10");
+            cellMembrane.setAttribute("fill", "#8b4513");
+            svg.appendChild(cellMembrane);
+            
+            // 细胞内部区域
+            const cytoplasm = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            cytoplasm.setAttribute("x", "610");
+            cytoplasm.setAttribute("y", "260");
+            cytoplasm.setAttribute("width", "330");
+            cytoplasm.setAttribute("height", "280");
+            cytoplasm.setAttribute("fill", "rgba(255, 255, 200, 0.3)");
+            svg.appendChild(cytoplasm);
+            
+            // 液泡
+            const vacuole = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+            vacuole.setAttribute("cx", "750");
+            vacuole.setAttribute("cy", "400");
+            vacuole.setAttribute("rx", "100");
+            vacuole.setAttribute("ry", "80");
+            vacuole.setAttribute("fill", "rgba(155, 89, 182, 0.2)");
+            vacuole.setAttribute("stroke", "#9b59b6");
+            vacuole.setAttribute("stroke-width", "2");
+            svg.appendChild(vacuole);
+            
+            const vacuoleLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            vacuoleLabel.setAttribute("x", "740");
+            vacuoleLabel.setAttribute("y", "400");
+            vacuoleLabel.setAttribute("fill", "#9b59b6");
+            vacuoleLabel.setAttribute("font-size", "14");
+            vacuoleLabel.setAttribute("text-anchor", "middle");
+            vacuoleLabel.textContent = "液泡";
+            svg.appendChild(vacuoleLabel);
+            
+            // 标注
+            const labels = [
+                {x: 590, y: 255, text: "细胞膜", anchor: "end"},
+                {x: 620, y: 280, text: "细胞质", anchor: "start"},
+                {x: 960, y: 260, text: "土壤溶液", anchor: "start"}
+            ];
+            
+            labels.forEach(label => {
+                const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                text.setAttribute("x", label.x.toString());
+                text.setAttribute("y", label.y.toString());
+                text.setAttribute("fill", "#333");
+                text.setAttribute("font-size", "13");
+                text.setAttribute("text-anchor", label.anchor || "start");
+                text.textContent = label.text;
+                svg.appendChild(text);
+            });
+            
+            // 绘制各种转运蛋白示意
+            // 质子泵
+            const protonPump = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            protonPump.setAttribute("x", "610");
+            protonPump.setAttribute("y", "245");
+            protonPump.setAttribute("width", "40");
+            protonPump.setAttribute("height", "15");
+            protonPump.setAttribute("fill", "#e74c3c");
+            protonPump.setAttribute("rx", "3");
+            svg.appendChild(protonPump);
+            
+            const protonPumpLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            protonPumpLabel.setAttribute("x", "630");
+            protonPumpLabel.setAttribute("y", "240");
+            protonPumpLabel.setAttribute("fill", "#c0392b");
+            protonPumpLabel.setAttribute("font-size", "12");
+            protonPumpLabel.setAttribute("text-anchor", "middle");
+            protonPumpLabel.textContent = "H⁺泵";
+            svg.appendChild(protonPumpLabel);
+            
+            // 铵转运蛋白
+            const nh4Transporter = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            nh4Transporter.setAttribute("x", "670");
+            nh4Transporter.setAttribute("y", "245");
+            nh4Transporter.setAttribute("width", "40");
+            nh4Transporter.setAttribute("height", "15");
+            nh4Transporter.setAttribute("fill", "#9b59b6");
+            nh4Transporter.setAttribute("rx", "3");
+            svg.appendChild(nh4Transporter);
+            
+            // 磷酸盐转运蛋白
+            const phosphateTransporter = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            phosphateTransporter.setAttribute("x", "730");
+            phosphateTransporter.setAttribute("y", "245");
+            phosphateTransporter.setAttribute("width", "40");
+            phosphateTransporter.setAttribute("height", "15");
+            phosphateTransporter.setAttribute("fill", "#3498db");
+            phosphateTransporter.setAttribute("rx", "3");
+            svg.appendChild(phosphateTransporter);
+            
+            // 钾离子通道
+            const kChannel = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+            kChannel.setAttribute("cx", "800");
+            kChannel.setAttribute("cy", "252");
+            kChannel.setAttribute("rx", "20");
+            kChannel.setAttribute("ry", "8");
+            kChannel.setAttribute("fill", "#2ecc71");
+            svg.appendChild(kChannel);
+            
+            // 钾载体蛋白
+            const kTransporter = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            kTransporter.setAttribute("x", "850");
+            kTransporter.setAttribute("y", "245");
+            kTransporter.setAttribute("width", "40");
+            kTransporter.setAttribute("height", "15");
+            kTransporter.setAttribute("fill", "#27ae60");
+            kTransporter.setAttribute("rx", "3");
+            svg.appendChild(kTransporter);
+            
+            // 硝态氮共转运蛋白
+            const no3Transporter = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            no3Transporter.setAttribute("x", "910");
+            no3Transporter.setAttribute("y", "245");
+            no3Transporter.setAttribute("width", "40");
+            no3Transporter.setAttribute("height", "15");
+            no3Transporter.setAttribute("fill", "#e67e22");
+            no3Transporter.setAttribute("rx", "3");
+            svg.appendChild(no3Transporter);
+        }
+        
+        // 绘制特定阶段的动画
+        function drawStage(stageIndex) {
+            // 清除之前的动态元素
+            const dynamicElements = svg.querySelectorAll('.dynamic-element');
+            dynamicElements.forEach(el => el.remove());
+            
+            currentStage = stageIndex;
+            updateStageIndicator();
+            updateInfoPanel();
+            
+            // 绘制根毛细胞放大图（除了第0阶段）
+            if (stageIndex > 0) {
+                drawRootCellZoom();
+            }
+            
+            switch(stageIndex) {
+                case 0: // 初始状态 - 养分分布
+                    drawInitialNutrients();
+                    break;
+                case 1: // 根际酸化
+                    drawRhizosphereAcidification();
+                    break;
+                case 2: // 氮吸收
+                    drawNitrogenUptake();
+                    break;
+                case 3: // 磷吸收
+                    drawPhosphorusUptake();
+                    break;
+                case 4: // 钾吸收
+                    drawPotassiumUptake();
+                    break;
+                case 5: // 完整过程
+                    drawFullProcess();
+                    break;
+            }
+        }
+        
+        // 绘制初始养分分布
+        function drawInitialNutrients() {
+            // 在土壤中绘制氮、磷、钾养分点
+            const nutrients = [];
+            
+            // 铵态氮 (NH4+) - 紫色
+            for (let i = 0; i < 25; i++) {
+                nutrients.push({
+                    type: 'NH4',
+                    x: 50 + Math.random() * 400,
+                    y: 250 + Math.random() * 300,
+                    color: nutrientColors.nitrogen.NH4
+                });
+            }
+            
+            // 硝态氮 (NO3-) - 橙色
+            for (let i = 0; i < 20; i++) {
+                nutrients.push({
+                    type: 'NO3',
+                    x: 100 + Math.random() * 350,
+                    y: 250 + Math.random() * 300,
+                    color: nutrientColors.nitrogen.NO3
+                });
+            }
+            
+            // 磷 (H2PO4-) - 蓝色
+            for (let i = 0; i < 15; i++) {
+                nutrients.push({
+                    type: 'P',
+                    x: 300 + Math.random() * 150,
+                    y: 300 + Math.random() * 200,
+                    color: nutrientColors.phosphorus
+                });
+            }
+            
+            // 钾 (K+) - 绿色
+            for (let i = 0; i < 30; i++) {
+                nutrients.push({
+                    type: 'K',
+                    x: 50 + Math.random() * 400,
+                    y: 250 + Math.random() * 300,
+                    color: nutrientColors.potassium
+                });
+            }
+            
+            // 绘制固定态磷（被土壤颗粒吸附）
+            for (let i = 0; i < 8; i++) {
+                const fixedP = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                const x = 350 + Math.random() * 100;
+                const y = 350 + Math.random() * 150;
+                fixedP.setAttribute("x", x.toString());
+                fixedP.setAttribute("y", y.toString());
+                fixedP.setAttribute("width", "20");
+                fixedP.setAttribute("height", "20");
+                fixedP.setAttribute("fill", "#95a5a6");
+                fixedP.setAttribute("rx", "3");
+                fixedP.classList.add('dynamic-element');
+                svg.appendChild(fixedP);
+                
+                // 添加锁形图标
+                const lock = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                lock.setAttribute("x", (x + 10).toString());
+                lock.setAttribute("y", (y + 15).toString());
+                lock.setAttribute("fill", "#7f8c8d");
+                lock.setAttribute("font-size", "14");
+                lock.setAttribute("text-anchor", "middle");
+                lock.setAttribute("font-weight", "bold");
+                lock.textContent = "🔒";
+                lock.classList.add('dynamic-element');
+                svg.appendChild(lock);
+            }
+            
+            // 绘制所有可移动养分点
+            nutrients.forEach(nutrient => {
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", nutrient.x.toString());
+                circle.setAttribute("cy", nutrient.y.toString());
+                circle.setAttribute("r", "6");
+                circle.setAttribute("fill", nutrient.color);
+                circle.setAttribute("opacity", "0.8");
+                circle.classList.add('dynamic-element');
+                svg.appendChild(circle);
+                
+                // 添加养分类型标签
+                const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                label.setAttribute("x", nutrient.x.toString());
+                label.setAttribute("y", (nutrient.y - 10).toString());
+                label.setAttribute("fill", nutrient.color);
+                label.setAttribute("font-size", "12");
+                label.setAttribute("text-anchor", "middle");
+                label.setAttribute("font-weight", "bold");
+                
+                if (nutrient.type === 'NH4') label.textContent = "NH₄⁺";
+                else if (nutrient.type === 'NO3') label.textContent = "NO₃⁻";
+                else if (nutrient.type === 'P') label.textContent = "H₂PO₄⁻";
+                else if (nutrient.type === 'K') label.textContent = "K⁺";
+                
+                label.classList.add('dynamic-element');
+                svg.appendChild(label);
+            });
+            
+            // 添加菌根真菌示意（静态）
+            const mycorrhiza = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            mycorrhiza.setAttribute("d", "M 400,450 C 450,430 500,410 550,400 C 600,390 650,400 700,420");
+            mycorrhiza.setAttribute("fill", "none");
+            mycorrhiza.setAttribute("stroke", nutrientColors.mycorrhiza);
+            mycorrhiza.setAttribute("stroke-width", "3");
+            mycorrhiza.setAttribute("stroke-dasharray", "5,3");
+            mycorrhiza.classList.add('dynamic-element');
+            svg.appendChild(mycorrhiza);
+            
+            // 添加菌根真菌网络标签
+            const mycorrhizaLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            mycorrhizaLabel.setAttribute("x", "580");
+            mycorrhizaLabel.setAttribute("y", "380");
+            mycorrhizaLabel.setAttribute("fill", nutrientColors.mycorrhiza);
+            mycorrhizaLabel.setAttribute("font-size", "13");
+            mycorrhizaLabel.textContent = "菌根真菌菌丝网络";
+            mycorrhizaLabel.classList.add('dynamic-element');
+            svg.appendChild(mycorrhizaLabel);
+        }
+        
+        // 绘制根际酸化过程
+        function drawRhizosphereAcidification() {
+            // 绘制从根毛细胞分泌的H+质子
+            for (let i = 0; i < 15; i++) {
+                const hPlus = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                const startX = 180 + Math.random() * 40;
+                const startY = 380 + Math.random() * 80;
+                hPlus.setAttribute("cx", startX.toString());
+                hPlus.setAttribute("cy", startY.toString());
+                hPlus.setAttribute("r", "4");
+                hPlus.setAttribute("fill", nutrientColors.hPlus);
+                hPlus.classList.add('dynamic-element');
+                svg.appendChild(hPlus);
+                
+                // 添加H+标签
+                const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                label.setAttribute("x", startX.toString());
+                label.setAttribute("y", (startY - 8).toString());
+                label.setAttribute("fill", nutrientColors.hPlus);
+                label.setAttribute("font-size", "10");
+                label.setAttribute("text-anchor", "middle");
+                label.setAttribute("font-weight", "bold");
+                label.textContent = "H⁺";
+                label.classList.add('dynamic-element');
+                svg.appendChild(label);
+                
+                // 添加H+向外扩散的动画
+                hPlus.style.animation = `hplusDiffuse 2s ${i * 0.1}s infinite alternate`;
+            }
+            
+            // 添加CSS动画定义
+            const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+            style.textContent = `
+                @keyframes hplusDiffuse {
+                    0% { transform: translate(0, 0); opacity: 1; }
+                    100% { transform: translate(${20 + Math.random() * 30}, ${-10 - Math.random() * 20}); opacity: 0.3; }
+                }
+            `;
+            svg.appendChild(style);
+            
+            // 绘制根际pH降低的示意区域
+            const acidZone = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+            acidZone.setAttribute("cx", "220");
+            acidZone.setAttribute("cy", "380");
+            acidZone.setAttribute("rx", "100");
+            acidZone.setAttribute("ry", "70");
+            acidZone.setAttribute("fill", "rgba(231, 76, 60, 0.2)");
+            acidZone.setAttribute("stroke", nutrientColors.hPlus);
+            acidZone.setAttribute("stroke-width", "2");
+            acidZone.setAttribute("stroke-dasharray", "5,3");
+            acidZone.classList.add('dynamic-element');
+            svg.appendChild(acidZone);
+            
+            // 添加根际酸化标签
+            const acidLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            acidLabel.setAttribute("x", "220");
+            acidLabel.setAttribute("y", "350");
+            acidLabel.setAttribute("fill", nutrientColors.hPlus);
+            acidLabel.setAttribute("font-size", "14");
+            acidLabel.setAttribute("text-anchor", "middle");
+            acidLabel.setAttribute("font-weight", "bold");
+            acidLabel.textContent = "根际酸化区域 (pH降低)";
+            acidLabel.classList.add('dynamic-element');
+            svg.appendChild(acidLabel);
+            
+            // 绘制被酸解释放的磷
+            const releasedP = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            releasedP.setAttribute("cx", "350");
+            releasedP.setAttribute("cy", "380");
+            releasedP.setAttribute("r", "8");
+            releasedP.setAttribute("fill", nutrientColors.phosphorus);
+            releasedP.classList.add('dynamic-element');
+            svg.appendChild(releasedP);
+            
+            const releasedPLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            releasedPLabel.setAttribute("x", "350");
+            releasedPLabel.setAttribute("y", "370");
+            releasedPLabel.setAttribute("fill", nutrientColors.phosphorus);
+            releasedPLabel.setAttribute("font-size", "12");
+            releasedPLabel.setAttribute("text-anchor", "middle");
+            releasedPLabel.setAttribute("font-weight", "bold");
+            releasedPLabel.textContent = "H₂PO₄⁻";
+            releasedPLabel.classList.add('dynamic-element');
+            svg.appendChild(releasedPLabel);
+            
+            // 添加从固定态磷释放的动画箭头
+            const releaseArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            releaseArrow.setAttribute("d", "M 320,380 L 340,380");
+            releaseArrow.setAttribute("fill", "none");
+            releaseArrow.setAttribute("stroke", nutrientColors.phosphorus);
+            releaseArrow.setAttribute("stroke-width", "2");
+            releaseArrow.setAttribute("marker-end", "url(#arrowhead)");
+            releaseArrow.classList.add('dynamic-element');
+            svg.appendChild(releaseArrow);
+        }
+        
+        // 绘制氮吸收过程
+        function drawNitrogenUptake() {
+            drawRhizosphereAcidification(); // 包含根际酸化背景
+            
+            // 绘制铵态氮(NH4+)吸收
+            for (let i = 0; i < 5; i++) {
+                const nh4 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                nh4.setAttribute("cx", (150 + i * 20).toString());
+                nh4.setAttribute("cy", (350 + i * 10).toString());
+                nh4.setAttribute("r", "6");
+                nh4.setAttribute("fill", nutrientColors.nitrogen.NH4);
+                nh4.classList.add('dynamic-element');
+                svg.appendChild(nh4);
+                
+                // 铵态氮吸收箭头（进入根毛）
+                const nh4Arrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                nh4Arrow.setAttribute("d", `M ${150 + i * 20} ${350 + i * 10} L ${180} ${380}`);
+                nh4Arrow.setAttribute("fill", "none");
+                nh4Arrow.setAttribute("stroke", nutrientColors.nitrogen.NH4);
+                nh4Arrow.setAttribute("stroke-width", "2");
+                nh4Arrow.setAttribute("marker-end", "url(#arrowhead)");
+                nh4Arrow.style.animation = `arrowFlow 2s ${i * 0.3}s infinite`;
+                nh4Arrow.classList.add('dynamic-element');
+                svg.appendChild(nh4Arrow);
+            }
+            
+            // 绘制硝态氮(NO3-)与H+共运输
+            for (let i = 0; i < 5; i++) {
+                const no3 = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                no3.setAttribute("cx", (250 + i * 15).toString());
+                no3.setAttribute("cy", (320 + i * 15).toString());
+                no3.setAttribute("r", "6");
+                no3.setAttribute("fill", nutrientColors.nitrogen.NO3);
+                no3.classList.add('dynamic-element');
+                svg.appendChild(no3);
+                
+                // H+离子（共运输）
+                const hPlus = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                hPlus.setAttribute("cx", (245 + i * 15).toString());
+                hPlus.setAttribute("cy", (335 + i * 15).toString());
+                hPlus.setAttribute("r", "4");
+                hPlus.setAttribute("fill", nutrientColors.hPlus);
+                hPlus.classList.add('dynamic-element');
+                svg.appendChild(hPlus);
+                
+                // 硝态氮与H+共运输箭头
+                const no3Arrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                no3Arrow.setAttribute("d", `M ${250 + i * 15} ${320 + i * 15} L ${200} ${390}`);
+                no3Arrow.setAttribute("fill", "none");
+                no3Arrow.setAttribute("stroke", nutrientColors.nitrogen.NO3);
+                no3Arrow.setAttribute("stroke-width", "2");
+                no3Arrow.setAttribute("stroke-dasharray", "5,3");
+                no3Arrow.setAttribute("marker-end", "url(#arrowhead)");
+                no3Arrow.style.animation = `arrowFlow 2s ${i * 0.4}s infinite`;
+                no3Arrow.classList.add('dynamic-element');
+                svg.appendChild(no3Arrow);
+            }
+            
+            // 在根毛细胞放大图中绘制氮吸收过程
+            // 铵态氮通过转运蛋白进入细胞
+            const nh4CellArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            nh4CellArrow.setAttribute("d", "M 690,260 L 690,280");
+            nh4CellArrow.setAttribute("fill", "none");
+            nh4CellArrow.setAttribute("stroke", nutrientColors.nitrogen.NH4);
+            nh4CellArrow.setAttribute("stroke-width", "3");
+            nh4CellArrow.setAttribute("marker-end", "url(#arrowhead)");
+            nh4CellArrow.style.animation = "arrowFlow 1.5s infinite";
+            nh4CellArrow.classList.add('dynamic-element');
+            svg.appendChild(nh4CellArrow);
+            
+            // 硝态氮与H+共运输进入细胞
+            const no3CellArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            no3CellArrow.setAttribute("d", "M 930,260 L 930,280");
+            no3CellArrow.setAttribute("fill", "none");
+            no3CellArrow.setAttribute("stroke", nutrientColors.nitrogen.NO3);
+            no3CellArrow.setAttribute("stroke-width", "3");
+            no3CellArrow.setAttribute("marker-end", "url(#arrowhead)");
+            no3CellArrow.style.animation = "arrowFlow 1.5s 0.5s infinite";
+            no3CellArrow.classList.add('dynamic-element');
+            svg.appendChild(no3CellArrow);
+            
+            // H+与硝态氮一起进入细胞
+            const hPlusCellArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            hPlusCellArrow.setAttribute("d", "M 935,260 L 935,280");
+            hPlusCellArrow.setAttribute("fill", "none");
+            hPlusCellArrow.setAttribute("stroke", nutrientColors.hPlus);
+            hPlusCellArrow.setAttribute("stroke-width", "2");
+            hPlusCellArrow.setAttribute("marker-end", "url(#arrowhead)");
+            hPlusCellArrow.style.animation = "arrowFlow 1.5s 0.5s infinite";
+            hPlusCellArrow.classList.add('dynamic-element');
+            svg.appendChild(hPlusCellArrow);
+            
+            // 添加CSS动画
+            const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+            style.textContent = `
+                @keyframes arrowFlow {
+                    0% { opacity: 0; }
+                    50% { opacity: 1; }
+                    100% { opacity: 0; }
+                }
+            `;
+            svg.appendChild(style);
+            
+            // 添加氮吸收标签
+            const nUptakeLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            nUptakeLabel.setAttribute("x", "200");
+            nUptakeLabel.setAttribute("y", "300");
+            nUptakeLabel.setAttribute("fill", nutrientColors.nitrogen.NH4);
+            nUptakeLabel.setAttribute("font-size", "15");
+            nUptakeLabel.setAttribute("text-anchor", "middle");
+            nUptakeLabel.setAttribute("font-weight", "bold");
+            nUptakeLabel.textContent = "氮(N)吸收过程";
+            nUptakeLabel.classList.add('dynamic-element');
+            svg.appendChild(nUptakeLabel);
+        }
+        
+        // 绘制磷吸收过程
+        function drawPhosphorusUptake() {
+            drawRhizosphereAcidification(); // 包含根际酸化背景
+            
+            // 绘制有机酸分泌
+            for (let i = 0; i < 8; i++) {
+                const organicAcid = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                organicAcid.setAttribute("cx", (170 + i * 5).toString());
+                organicAcid.setAttribute("cy", (400 + i * 3).toString());
+                organicAcid.setAttribute("r", "5");
+                organicAcid.setAttribute("fill", nutrientColors.organicAcid);
+                organicAcid.classList.add('dynamic-element');
+                svg.appendChild(organicAcid);
+                
+                // 有机酸扩散箭头
+                const acidArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                acidArrow.setAttribute("d", `M ${170 + i * 5} ${400 + i * 3} L ${340 + i * 10} ${380}`);
+                acidArrow.setAttribute("fill", "none");
+                acidArrow.setAttribute("stroke", nutrientColors.organicAcid);
+                acidArrow.setAttribute("stroke-width", "1.5");
+                acidArrow.setAttribute("stroke-dasharray", "3,2");
+                acidArrow.style.animation = `arrowFlow 3s ${i * 0.2}s infinite`;
+                acidArrow.classList.add('dynamic-element');
+                svg.appendChild(acidArrow);
+            }
+            
+            // 绘制被有机酸释放的磷
+            const releasedP = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            releasedP.setAttribute("cx", "350");
+            releasedP.setAttribute("cy", "380");
+            releasedP.setAttribute("r", "8");
+            releasedP.setAttribute("fill", nutrientColors.phosphorus);
+            releasedP.style.animation = "pulse 1.5s infinite";
+            releasedP.classList.add('dynamic-element');
+            svg.appendChild(releasedP);
+            
+            // 磷吸收箭头（进入根毛）
+            const pArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            pArrow.setAttribute("d", "M 350 380 L 200 400");
+            pArrow.setAttribute("fill", "none");
+            pArrow.setAttribute("stroke", nutrientColors.phosphorus);
+            pArrow.setAttribute("stroke-width", "3");
+            pArrow.setAttribute("marker-end", "url(#arrowhead)");
+            pArrow.style.animation = "arrowFlow 2s infinite";
+            pArrow.classList.add('dynamic-element');
+            svg.appendChild(pArrow);
+            
+            // 绘制菌根真菌协助吸收远处磷
+            const distantP = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            distantP.setAttribute("cx", "650");
+            distantP.setAttribute("cy", "420");
+            distantP.setAttribute("r", "8");
+            distantP.setAttribute("fill", nutrientColors.phosphorus);
+            distantP.classList.add('dynamic-element');
+            svg.appendChild(distantP);
+            
+            const distantPLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            distantPLabel.setAttribute("x", "650");
+            distantPLabel.setAttribute("y", "410");
+            distantPLabel.setAttribute("fill", nutrientColors.phosphorus);
+            distantPLabel.setAttribute("font-size", "12");
+            distantPLabel.setAttribute("text-anchor", "middle");
+            distantPLabel.setAttribute("font-weight", "bold");
+            distantPLabel.textContent = "H₂PO₄⁻";
+            distantPLabel.classList.add('dynamic-element');
+            svg.appendChild(distantPLabel);
+            
+            // 菌根真菌运输磷的箭头
+            const mycorrhizaArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            mycorrhizaArrow.setAttribute("d", "M 650 420 L 550 420 L 500 400 L 400 410");
+            mycorrhizaArrow.setAttribute("fill", "none");
+            mycorrhizaArrow.setAttribute("stroke", nutrientColors.mycorrhiza);
+            mycorrhizaArrow.setAttribute("stroke-width", "2");
+            mycorrhizaArrow.setAttribute("marker-end", "url(#arrowhead)");
+            mycorrhizaArrow.style.animation = "arrowFlow 3s infinite";
+            mycorrhizaArrow.classList.add('dynamic-element');
+            svg.appendChild(mycorrhizaArrow);
+            
+            // 在根毛细胞放大图中绘制磷吸收
+            const pCellArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            pCellArrow.setAttribute("d", "M 750,260 L 750,280");
+            pCellArrow.setAttribute("fill", "none");
+            pCellArrow.setAttribute("stroke", nutrientColors.phosphorus);
+            pCellArrow.setAttribute("stroke-width", "3");
+            pCellArrow.setAttribute("marker-end", "url(#arrowhead)");
+            pCellArrow.style.animation = "arrowFlow 1.5s 0.3s infinite";
+            pCellArrow.classList.add('dynamic-element');
+            svg.appendChild(pCellArrow);
+            
+            // 添加H+与磷共运输
+            const hPlusForP = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            hPlusForP.setAttribute("d", "M 745,260 L 745,280");
+            hPlusForP.setAttribute("fill", "none");
+            hPlusForP.setAttribute("stroke", nutrientColors.hPlus);
+            hPlusForP.setAttribute("stroke-width", "2");
+            hPlusForP.setAttribute("marker-end", "url(#arrowhead)");
+            hPlusForP.style.animation = "arrowFlow 1.5s 0.3s infinite";
+            hPlusForP.classList.add('dynamic-element');
+            svg.appendChild(hPlusForP);
+            
+            // 添加磷吸收标签
+            const pUptakeLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            pUptakeLabel.setAttribute("x", "200");
+            pUptakeLabel.setAttribute("y", "300");
+            pUptakeLabel.setAttribute("fill", nutrientColors.phosphorus);
+            pUptakeLabel.setAttribute("font-size", "15");
+            pUptakeLabel.setAttribute("text-anchor", "middle");
+            pUptakeLabel.setAttribute("font-weight", "bold");
+            pUptakeLabel.textContent = "磷(P)吸收过程";
+            pUptakeLabel.classList.add('dynamic-element');
+            svg.appendChild(pUptakeLabel);
+            
+            // 添加CSS动画
+            const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+            style.textContent = `
+                @keyframes pulse {
+                    0% { r: 8; }
+                    50% { r: 10; }
+                    100% { r: 8; }
+                }
+            `;
+            svg.appendChild(style);
+        }
+        
+        // 绘制钾吸收过程
+        function drawPotassiumUptake() {
+            drawRhizosphereAcidification(); // 包含根际酸化背景
+            
+            // 绘制钾离子(K+)分布
+            for (let i = 0; i < 12; i++) {
+                const kPlus = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                kPlus.setAttribute("cx", (100 + i * 25).toString());
+                kPlus.setAttribute("cy", (350 + Math.sin(i) * 40).toString());
+                kPlus.setAttribute("r", "6");
+                kPlus.setAttribute("fill", nutrientColors.potassium);
+                kPlus.classList.add('dynamic-element');
+                svg.appendChild(kPlus);
+                
+                // 钾离子标签
+                const kLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                kLabel.setAttribute("x", (100 + i * 25).toString());
+                kLabel.setAttribute("y", (340 + Math.sin(i) * 40).toString());
+                kLabel.setAttribute("fill", nutrientColors.potassium);
+                kLabel.setAttribute("font-size", "11");
+                kLabel.setAttribute("text-anchor", "middle");
+                kLabel.setAttribute("font-weight", "bold");
+                kLabel.textContent = "K⁺";
+                kLabel.classList.add('dynamic-element');
+                svg.appendChild(kLabel);
+                
+                // 钾离子吸收箭头（通道运输）
+                if (i % 2 === 0) {
+                    const kChannelArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    kChannelArrow.setAttribute("d", `M ${100 + i * 25} ${350 + Math.sin(i) * 40} L ${180} ${380}`);
+                    kChannelArrow.setAttribute("fill", "none");
+                    kChannelArrow.setAttribute("stroke", nutrientColors.potassium);
+                    kChannelArrow.setAttribute("stroke-width", "2");
+                    kChannelArrow.setAttribute("marker-end", "url(#arrowhead)");
+                    kChannelArrow.style.animation = `arrowFlow 2s ${i * 0.2}s infinite`;
+                    kChannelArrow.classList.add('dynamic-element');
+                    svg.appendChild(kChannelArrow);
+                }
+                // 钾离子吸收箭头（载体蛋白主动运输）
+                else {
+                    const kTransporterArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    kTransporterArrow.setAttribute("d", `M ${100 + i * 25} ${350 + Math.sin(i) * 40} L ${190} ${390}`);
+                    kTransporterArrow.setAttribute("fill", "none");
+                    kTransporterArrow.setAttribute("stroke", nutrientColors.potassium);
+                    kTransporterArrow.setAttribute("stroke-width", "2");
+                    kTransporterArrow.setAttribute("stroke-dasharray", "5,3");
+                    kTransporterArrow.setAttribute("marker-end", "url(#arrowhead)");
+                    kTransporterArrow.style.animation = `arrowFlow 2.5s ${i * 0.3}s infinite`;
+                    kTransporterArrow.classList.add('dynamic-element');
+                    svg.appendChild(kTransporterArrow);
+                    
+                    // 伴随H+排出的反向箭头（主动运输的特征）
+                    const hPlusExportArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    hPlusExportArrow.setAttribute("d", `M ${190} ${390} L ${100 + i * 25} ${350 + Math.sin(i) * 40}`);
+                    hPlusExportArrow.setAttribute("fill", "none");
+                    hPlusExportArrow.setAttribute("stroke", nutrientColors.hPlus);
+                    hPlusExportArrow.setAttribute("stroke-width", "1.5");
+                    hPlusExportArrow.setAttribute("marker-end", "url(#arrowhead)");
+                    hPlusExportArrow.style.animation = `arrowFlow 2.5s ${i * 0.3}s infinite`;
+                    hPlusExportArrow.classList.add('dynamic-element');
+                    svg.appendChild(hPlusExportArrow);
+                }
+            }
+            
+            // 在根毛细胞放大图中绘制钾吸收
+            // 钾离子通道运输
+            const kChannelArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            kChannelArrow.setAttribute("d", "M 800,260 L 800,280");
+            kChannelArrow.setAttribute("fill", "none");
+            kChannelArrow.setAttribute("stroke", nutrientColors.potassium);
+            kChannelArrow.setAttribute("stroke-width", "3");
+            kChannelArrow.setAttribute("marker-end", "url(#arrowhead)");
+            kChannelArrow.style.animation = "arrowFlow 1s infinite";
+            kChannelArrow.classList.add('dynamic-element');
+            svg.appendChild(kChannelArrow);
+            
+            // 钾离子载体蛋白主动运输
+            const kTransporterArrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            kTransporterArrow.setAttribute("d", "M 870,260 L 870,280");
+            kTransporterArrow.setAttribute("fill", "none");
+            kTransporterArrow.setAttribute("stroke", nutrientColors.potassium);
+            kTransporterArrow.setAttribute("stroke-width", "3");
+            kTransporterArrow.setAttribute("stroke-dasharray", "5,3");
+            kTransporterArrow.setAttribute("marker-end", "url(#arrowhead)");
+            kTransporterArrow.style.animation = "arrowFlow 1.5s 0.5s infinite";
+            kTransporterArrow.classList.add('dynamic-element');
+            svg.appendChild(kTransporterArrow);
+            
+            // H+排出（与K+主动运输耦联）
+            const hPlusExport = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            hPlusExport.setAttribute("d", "M 865,280 L 865,260");
+            hPlusExport.setAttribute("fill", "none");
+            hPlusExport.setAttribute("stroke", nutrientColors.hPlus);
+            hPlusExport.setAttribute("stroke-width", "2");
+            hPlusExport.setAttribute("marker-end", "url(#arrowhead)");
+            hPlusExport.style.animation = "arrowFlow 1.5s 0.5s infinite";
+            hPlusExport.classList.add('dynamic-element');
+            svg.appendChild(hPlusExport);
+            
+            // 添加钾吸收标签
+            const kUptakeLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            kUptakeLabel.setAttribute("x", "200");
+            kUptakeLabel.setAttribute("y", "300");
+            kUptakeLabel.setAttribute("fill", nutrientColors.potassium);
+            kUptakeLabel.setAttribute("font-size", "15");
+            kUptakeLabel.setAttribute("text-anchor", "middle");
+            kUptakeLabel.setAttribute("font-weight", "bold");
+            kUptakeLabel.textContent = "钾(K)吸收过程";
+            kUptakeLabel.classList.add('dynamic-element');
+            svg.appendChild(kUptakeLabel);
+        }
+        
+        // 绘制完整吸收过程
+        function drawFullProcess() {
+            // 绘制所有过程
+            drawNitrogenUptake();
+            drawPhosphorusUptake();
+            drawPotassiumUptake();
+            
+            // 移除各单独过程的标题，添加总标题
+            const titles = svg.querySelectorAll('text[dynamic-element]');
+            titles.forEach(title => {
+                if (title.textContent.includes("吸收过程")) {
+                    title.remove();
+                }
+            });
+            
+            // 添加完整过程总标题
+            const fullProcessLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            fullProcessLabel.setAttribute("x", "200");
+            fullProcessLabel.setAttribute("y", "300");
+            fullProcessLabel.setAttribute("fill", "#2c5530");
+            fullProcessLabel.setAttribute("font-size", "16");
+            fullProcessLabel.setAttribute("text-anchor", "middle");
+            fullProcessLabel.setAttribute("font-weight", "bold");
+            fullProcessLabel.textContent = "氮、磷、钾完整吸收过程";
+            fullProcessLabel.classList.add('dynamic-element');
+            svg.appendChild(fullProcessLabel);
+            
+            // 添加养分进入木质部向上运输的强化动画
+            const transportArrows = [
+                {color: nutrientColors.nitrogen.NH4, yOffset: 0},
+                {color: nutrientColors.phosphorus, yOffset: 5},
+                {color: nutrientColors.potassium, yOffset: -5}
+            ];
+            
+            transportArrows.forEach((arrow, index) => {
+                const transport = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                transport.setAttribute("d", `M 180,400 L 180,100`);
+                transport.setAttribute("fill", "none");
+                transport.setAttribute("stroke", arrow.color);
+                transport.setAttribute("stroke-width", "2");
+                transport.setAttribute("marker-end", "url(#arrowhead)");
+                transport.style.animation = `arrowFlow 2s ${index * 0.3}s infinite`;
+                transport.classList.add('dynamic-element');
+                svg.appendChild(transport);
+            });
+            
+            // 添加运输过程标签
+            const transportLabel = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            transportLabel.setAttribute("x", "180");
+            transportLabel.setAttribute("y", "80");
+            transportLabel.setAttribute("fill", "#2c5530");
+            transportLabel.setAttribute("font-size", "14");
+            transportLabel.setAttribute("text-anchor", "middle");
+            transportLabel.setAttribute("font-weight", "bold");
+            transportLabel.textContent = "↑ 养分向上运输至植物地上部分";
+            transportLabel.classList.add('dynamic-element');
+            svg.appendChild(transportLabel);
+        }
+        
+        // 更新阶段指示器
+        function updateStageIndicator() {
+            const indicator = document.getElementById('stageIndicator');
+            indicator.textContent = `阶段 ${currentStage + 1}/${animationStages.length}: ${animationStages[currentStage].name}`;
+        }
+        
+        // 更新信息面板
+        function updateInfoPanel() {
+            const infoText = document.getElementById('infoText');
+            infoText.textContent = animationStages[currentStage].description;
+        }
+        
+        // 控制函数
+        function playAnimation() {
+            if (animationPlaying) {
+                pauseAnimation();
+                return;
+            }
+            
+            animationPlaying = true;
+            document.getElementById('playBtn').textContent = '暂停';
+            
+            let stageStartTime = Date.now();
+            
+            function animateStage() {
+                if (!animationPlaying) return;
+                
+                const elapsed = Date.now() - stageStartTime;
+                const stageDuration = animationStages[currentStage].duration;
+                
+                if (elapsed >= stageDuration) {
+                    // 转到下一阶段
+                    currentStage = (currentStage + 1) % animationStages.length;
+                    drawStage(currentStage);
+                    stageStartTime = Date.now();
+                }
+                
+                animationTimer = setTimeout(animateStage, 50);
+            }
+            
+            animateStage();
+        }
+        
+        function pauseAnimation() {
+            animationPlaying = false;
+            clearTimeout(animationTimer);
+            document.getElementById('playBtn').textContent = '播放/暂停';
+        }
+        
+        function nextStage() {
+            pauseAnimation();
+            currentStage = (currentStage + 1) % animationStages.length;
+            drawStage(currentStage);
+        }
+        
+        function prevStage() {
+            pauseAnimation();
+            currentStage = (currentStage - 1 + animationStages.length) % animationStages.length;
+            drawStage(currentStage);
+        }
+        
+        function restartAnimation() {
+            pauseAnimation();
+            currentStage = 0;
+            drawStage(currentStage);
+        }
+        
+        function showAllProcesses() {
+            pauseAnimation();
+            currentStage = 5; // 完整过程阶段
+            drawStage(currentStage);
+        }
+        
+        // 初始化
+        window.onload = function() {
+            initSVG();
+            
+            // 绑定按钮事件
+            document.getElementById('playBtn').addEventListener('click', playAnimation);
+            document.getElementById('pauseBtn')
+            document.getElementById('prevBtn').addEventListener('click', prevStage);
+            document.getElementById('nextBtn').addEventListener('click', nextStage);
+            document.getElementById('restartBtn').addEventListener('click', restartAnimation);
+            document.getElementById('showAllBtn').addEventListener('click', showAllProcesses);
+            
+            // 添加键盘控制
+            document.addEventListener('keydown', function(e) {
+                switch(e.key) {
+                    case 'ArrowLeft': prevStage(); break;
+                    case 'ArrowRight': nextStage(); break;
+                    case ' ': playAnimation(); break;
+                    case 'r': restartAnimation(); break;
+                }
+            });
+        };
+    </script>
+</body>
+</html>
